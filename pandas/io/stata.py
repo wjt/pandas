@@ -19,9 +19,9 @@ from pandas.core.frame import DataFrame
 from pandas.core.series import Series
 from pandas.core.categorical import Categorical
 import datetime
-from pandas import compat
+from pandas import compat, isnull
 from pandas.compat import long, lrange, lmap, lzip
-from pandas import isnull
+from pandas.core import common as com
 from pandas.io.common import get_filepath_or_buffer
 
 
@@ -957,6 +957,40 @@ class StataWriter(StataParser):
             self._write(typ)
 
         # varlist, length 33*nvar, char array, null terminated
+<<<<<<< Updated upstream
+=======
+        converted_names = []
+        duplicate_var_id = 0
+        for j, name in enumerate(self.varlist):
+            orig_name = name
+            # Replaces all characters disallowed in .dta format by their integral representation.
+            for c in name:
+                if (c < 'A' or c > 'Z') and (c < 'a' or c > 'z') and (c < '0' or c > '9') and c != '_':
+                    name = name.replace(c, '_')
+
+            # Variable name may not start with a number
+            if name[0] > '0' and name[0] < '9':
+                name = '_' + name
+
+            name = name[:min(len(name), 32)]
+
+            if not name == orig_name:
+                # check for duplicates
+                while self.varlist.count(name) > 0:
+                    # prepend ascending number to avoid duplicates
+                    name = '_' + str(duplicate_var_id) + name
+                    name = name[:min(len(name), 32)]
+                    duplicate_var_id += 1
+
+                # need to possibly encode the orig name if its unicode
+                try:
+                    orig_name = orig_name.encode('utf-8')
+                except:
+                    pass
+                converted_names.append("{0} -> {1}".format(orig_name,name))
+                self.varlist[j] = name
+
+>>>>>>> Stashed changes
         for name in self.varlist:
             name = self._null_terminate(name, True)
             name = _pad_bytes(name[:32], 33)
