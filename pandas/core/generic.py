@@ -1838,9 +1838,9 @@ class NDFrame(PandasObject):
             0: fill column-by-column
             1: fill row-by-row
         inplace : boolean, default False
-            If True, fill in place. Note: this will modify any
+            If True, fill in place and return None. Note: this will modify any
             other views on this object, (e.g. a no-copy slice for a column in a
-            DataFrame).  Still returns the object.
+            DataFrame).
         limit : int, default None
             Maximum size gap to forward or backward fill
         downcast : dict, default is None, a dict of item->dtype of what to
@@ -1854,7 +1854,7 @@ class NDFrame(PandasObject):
 
         Returns
         -------
-        filled : same type as caller
+        filled : same type as caller, or None if inplace is True
         """
         if isinstance(value, (list, tuple)):
             raise TypeError('"value" parameter must be a scalar or dict, but '
@@ -1875,7 +1875,7 @@ class NDFrame(PandasObject):
                 # need to downcast here because of all of the transposes
                 result._data = result._data.downcast()
 
-                return result
+                return result if not inplace else None
 
             # > 3d
             if self.ndim > 3:
@@ -1885,6 +1885,8 @@ class NDFrame(PandasObject):
 
             # 3d
             elif self.ndim == 3:
+                if inplace:
+                    raise NotImplementedError()
 
                 # fill in 2d chunks
                 result = dict([(col, s.fillna(method=method, value=value))
@@ -1917,7 +1919,8 @@ class NDFrame(PandasObject):
                         continue
                     obj = result[k]
                     obj.fillna(v, inplace=True)
-                return result
+
+                return result if not inplace else None
             else:
                 new_data = self._data.fillna(value, inplace=inplace,
                                              downcast=downcast)
